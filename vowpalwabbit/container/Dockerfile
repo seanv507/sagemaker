@@ -13,8 +13,12 @@ RUN apt-get -y update && apt-get install -y --no-install-recommends \
          vowpal-wabbit \
          python3-venv \
          python3-pip \
+         python3-setuptools\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+# believe python3-setuptools required for gunicorn 
+# "import pkg_resources
+#  ModuleNotFoundError: No module named 'pkg_resources'"
 
 #RUN apt-get install -y --no-install-recommends python3-venv python3-pip && apt-get clean
 # python  3.6.6

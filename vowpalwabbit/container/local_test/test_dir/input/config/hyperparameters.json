@@ -2,5 +2,6 @@
     "data": "*.vw",
     "c": "",
     "passes": "30",
-    "loss_function": "logistic"
+    "loss_function": "logistic",
+    "link": "logistic"
 }
