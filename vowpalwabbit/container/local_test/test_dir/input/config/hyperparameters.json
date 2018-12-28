@@ -1,1 +1,6 @@
-{}
+{
+    "data": "*.vw",
+    "c": "",
+    "passes": "30",
+    "loss_function": "logistic"
+}

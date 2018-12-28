@@ -18,13 +18,11 @@ import criteo
 sns.set(style="ticks")
 
 
-# Plot the orbital period with horizontal boxes
-
 fil ='data/input/train.txt'
 fil_short = 'data/input/train_4000000.txt'
 fil_short_vw = 'data/train/train_4000000.vw'
 vw_path = 'data'
-criteo.gen_vw(fil_short, fil_short_vw)
+criteo.gen_vw(fil_short, fil_short_vw, True)
 
 nint=13
 ncat=26

@@ -45,10 +45,10 @@ ENV PYTHONDONTWRITEBYTECODE=TRUE
 ENV PATH="/opt/program:${PATH}"
 
 # ENTRYPOINT PYTHONPATH=zalondatatools:$PYTHONPATH python3 scripts/ranking_pipeline.py
-CMD /bin/bash
+# CMD /bin/bash
 
 # Set up the program in the image
-COPY decision_trees /opt/program
+COPY vowpalwabbit /opt/program
 WORKDIR /opt/program
 
 COPY . /opt/program
