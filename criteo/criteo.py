@@ -8,32 +8,48 @@ import pandas as pd
 def gen_vw(input_file, output_file, ln_transform=False):
     with open(output_file, 'w') as o_f:
         for l in open(input_file):
-
-            z = l.split('\t')
-            tgt = int(z[0]) * 2 - 1
-            if ln_transform:
-                ints = np.log(pd.to_numeric(pd.Series(z[1:14]),errors='coerce')
-                              + 3.0)
-            else:
-                ints = z[1:14]
-            ints = z[1:14]
-
-            cats = z[14:]  # newline preserved
-            new_l = (str(tgt) +
-                     ' |I ' + ' '.join(ints) +
-                     ' |C ' + ' '.join(cats))
+            l_vw = gen_vw_line(l, ln_transform)
+            o_f.write(l_vw)
 
 
-            ints = ' '.join(['|{} I{:02d}:{}'.format(
-                             chr(ord('a') + i), i, ints[i])
-                             for i in range(len(ints)) if ints[i]])
-            cats = ' '.join(['|{} C{:02d}=={}'.format(
-                             chr(ord('A') + i), i, cats[i])
-                             for i in range(len(cats)) if cats[i]])
+def gen_vw_line(dat, ln_transform=False):
+    scaling = [1.3862943611,
+               2.277267285,
+               1.7346010554,
+               1.2039728043,
+               2.9603517963,
+               2.4277482359,
+               1.7047480922,
+               1.9459101491,
+               2.2655438213,
+               0.6931471806,
+               1.0986122887,
+               0.6931471806,
+               1.2992829841]
 
-            new_l = (str(tgt) + ' ' + ints + cats)
+    z = dat.split('\t')
+    tgt = int(z[0]) * 2 - 1
+    ints = z[1:14]
+    if ln_transform:
+        offset = np.ones((13,))
+        offset[1] = 4
+        ints = np.log(pd.to_numeric(pd.Series(ints), errors='coerce')
+                      + offset) / scaling
+        ints = ints.astype(str).replace('nan', '')
+        # preserve sparsity, don't subtract mean
+        # missing -> 0 [in vw] and 0-> ln(1 or 4)/scaling
 
-            o_f.write(new_l)
+    cats = z[14:]  # newline preserved
+
+    ints = ' '.join(['|{} I{:02d}:{}'.format(
+                     chr(ord('a') + i), i, ints[i])
+                     for i in range(len(ints)) if ints[i]])
+    cats = ' '.join(['|{} C{:02d}=={}'.format(
+                     chr(ord('A') + i), i, cats[i])
+                     for i in range(len(cats)) if cats[i]])
+
+    new_l = (str(tgt) + ' ' + ints + cats)
+    return new_l
 
 
 def parse_namespace(sect):

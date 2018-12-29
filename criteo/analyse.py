@@ -22,11 +22,14 @@ fil ='data/input/train.txt'
 fil_short = 'data/input/train_4000000.txt'
 fil_short_vw = 'data/train/train_4000000.vw'
 vw_path = 'data'
-criteo.gen_vw(fil_short, fil_short_vw, True)
+# criteo.gen_vw(fil_short, fil_short_vw, True)
 
 nint=13
 ncat=26
-dat = pd.read_csv(fil_short,sep='\t', nrows=1000000,
+categs = ['C{:02d}'.format(c) for c in range(ncat)]
+ints = ['I{:02d}'.format(c) for c in range(nint)]
+
+dat = pd.read_csv(fil_short,sep='\t', #nrows=1000000,
                   header=None,
                   names = ['click'] + [f'I{i:02d}' for i in range(nint)]
                   + [f'C{i:02d}' for i in range(ncat)])
@@ -37,8 +40,6 @@ dat['I01'].hist(by=dat.click,bins=20)
 dat[['click','I01']].assign(ln01=lambda x:np.log(x['I01'])).boxplot(by='click',sharex=False)
 
 
-categs = ['C{:02d}'.format(c) for c in range(ncat)]
-ints = ['I{:02d}'.format(c) for c in range(nint)]
 
 def calc_cats(ser_cat):
     v = ser_cat.value_counts().rename('counts').to_frame()
