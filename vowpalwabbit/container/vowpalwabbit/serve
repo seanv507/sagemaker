@@ -68,5 +68,4 @@ def start_server():
 # The main routine just invokes the start function.
 
 if __name__ == '__main__':
-    import pdb;pdb.set_trace()
     start_server()
