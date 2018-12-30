@@ -39,13 +39,17 @@ def json_cli(k, v):
         param = '-' + k
     v_str = str(v.rstrip(' '))
     if len(v_str):
-        param += ' ' + v
-    return param
+        params = [param, v_str]
+    else:
+        params = [param]
+    return params
+
 
 def convert_json_params(dc):
     # params with no argument should be passed with just space string value ' '
     # aws seems to remove keys with empty string!
-    params = ' '.join([json_cli(k, v) for k, v in dc.items()])
+    #params = ' '.join([json_cli(k, v) for k, v in dc.items()])
+    params = [p for k, v in dc.items() for p in json_cli(k, v)]
     return params
 
 
@@ -58,8 +62,8 @@ def train():
             pars_dc = json.load(tc)
         print(pars_dc)
         model = os.path.join(model_path, 'model.bin')
-        vw_command = 'vw --final_regressor {} {}'.format(
-            model, convert_json_params(pars_dc))
+        vw_param_list = convert_json_params(pars_dc)
+        vw_command = ['vw','--final_regressor', model] + vw_param_list
         print (vw_command)
         # Note that hyperparameters are always passed in as
         # strings, so we need to do any necessary conversions.
@@ -68,22 +72,28 @@ def train():
 
         # Take the set of files and read them all into a single pandas dataframe
         input_files = [os.path.join(training_path, file) 
-                       for file in os.listdir(training_path) ]
+                       for file in os.listdir(training_path)]
+        print(input_files)
         if len(input_files) == 0:
             raise ValueError(('There are no files in {}.\n' +
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
                               'the data specification in S3 was incorrectly specified or the role specified\n' +
                               'does not have permission to access the data.').format(training_path, channel_name))
         start_time = time.time()
-        stderr = subprocess.check_output(vw_command,
-                                         shell=True,
-                                         cwd=training_path,
-                                         stderr=subprocess.STDOUT,
-                                         timeout=60 * 20).decode('utf-8')
-        # timeout in seconds
+        p = subprocess.Popen(vw_command,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             cwd=training_path,)
         with open(os.path.join(model_path, 'results_log.txt'), 'w') as out:
-            out.write(stderr)
-        print(stderr)
+            for line in iter(p.stdout.readline, b''):
+                lin = line.decode('utf-8').rstrip()
+                print(lin)
+                print(lin, file=out)
+
+        # timeout in seconds
+        #with open(os.path.join(model_path, 'results_log.txt'), 'w') as out:
+        #    out.write(stderr)
+        #print(stderr)
         duration = time.time() - start_time
         print('Training complete in {} seconds.'.format(duration))
     except Exception as e:

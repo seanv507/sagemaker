@@ -1,5 +1,5 @@
 {
-    "data": "*.vw",
+    "data": "train_100.vw",
     "c": "",
     "passes": "30",
     "loss_function": "logistic",
