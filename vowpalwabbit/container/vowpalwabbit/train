@@ -37,13 +37,14 @@ def json_cli(k, v):
         param = '--' + k  
     else: 
         param = '-' + k
-    v_str = str(v)
+    v_str = str(v.rstrip(' '))
     if len(v_str):
         param += ' ' + v
     return param
 
 def convert_json_params(dc):
-    # params with no argument should be passed with empty string value ''
+    # params with no argument should be passed with just space string value ' '
+    # aws seems to remove keys with empty string!
     params = ' '.join([json_cli(k, v) for k, v in dc.items()])
     return params
 
@@ -55,6 +56,7 @@ def train():
         # Read in any hyperparameters that the user passed with the training job
         with open(param_path, 'r') as tc:
             pars_dc = json.load(tc)
+        print(pars_dc)
         model = os.path.join(model_path, 'model.bin')
         vw_command = 'vw --final_regressor {} {}'.format(
             model, convert_json_params(pars_dc))
