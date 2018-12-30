@@ -1,6 +1,7 @@
 {
     "data": "train_100.vw",
     "c": "",
+    "holdout_after": "70",
     "passes": "30",
     "loss_function": "logistic",
     "link": "logistic"
