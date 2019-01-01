@@ -7,7 +7,9 @@ import pandas as pd
 
 def gen_vw(input_file, output_file, ln_transform=False):
     with open(output_file, 'w') as o_f:
-        for l in open(input_file):
+        for i, l in enumerate(open(input_file)):
+            if not i % 10000:
+                print('line {}'.format(i))
             l_vw = gen_vw_line(l, ln_transform)
             o_f.write(l_vw)
 
@@ -27,28 +29,29 @@ def gen_vw_line(dat, ln_transform=False):
                0.6931471806,
                1.2992829841]
 
-    z = dat.split('\t')
+    z = dat.rstrip('\n').split('\t')
     tgt = int(z[0]) * 2 - 1
     ints = z[1:14]
     if ln_transform:
-        offset = np.ones((13,))
+        offset = np.ones((13,)) * 2
         offset[1] = 4
         ints = np.log(pd.to_numeric(pd.Series(ints), errors='coerce')
                       + offset) / scaling
         ints = ints.astype(str).replace('nan', '')
+        # TODO format as
         # preserve sparsity, don't subtract mean
-        # missing -> 0 [in vw] and 0-> ln(1 or 4)/scaling
+        # missing -> 0 [in vw] and 0-> ln(2 or 4)/scaling
 
-    cats = z[14:]  # newline preserved
+    cats = z[14:]
 
-    ints = ' '.join(['|{} I{:02d}:{}'.format(
+    ints = ' '.join(['|{} I{:02d}:{:.6f}'.format(
                      chr(ord('a') + i), i, ints[i])
                      for i in range(len(ints)) if ints[i]])
     cats = ' '.join(['|{} C{:02d}=={}'.format(
                      chr(ord('A') + i), i, cats[i])
                      for i in range(len(cats)) if cats[i]])
 
-    new_l = (str(tgt) + ' ' + ints + cats)
+    new_l = (str(tgt) + ' ' + ints + cats + '\n')
     return new_l
 
 
