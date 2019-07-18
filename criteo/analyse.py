@@ -39,6 +39,12 @@ plt.subplot(3,5,1)
 dat['I01'].hist(by=dat.click,bins=20)
 dat[['click','I01']].assign(ln01=lambda x:np.log(x['I01'])).boxplot(by='click',sharex=False)
 
+def to_apriori(line):
+    lin = line.rstrip().split('\t')
+    cats = lin[14:]
+    new_cats = [f'C{n:02d}:{c}' for n, c in enumerate(cats) if c]
+    new_line = '\t'.join(new_cats) + '\n'
+    return new_line
 
 
 def calc_cats(ser_cat):
@@ -48,13 +54,21 @@ def calc_cats(ser_cat):
     return v
 
 b = {}
+
+vcs = {}
+cnts = {}
 freqs = [.50,.75,.9,.95, 1]
+counts = np.array([5, 10, 50, 100])
 for c in categs:
+    print(c)
     v = calc_cats(dat[c])
+    #vcs[c] = v
+    #b[c] = pd.Series(v.cumfreq.searchsorted(freqs),index=freqs,name=c)
+    cn = pd.Series((-v.counts).searchsorted(-counts), index=counts, name=c)
+    cnts[c] = cn
 
-    b[c] = pd.Series(v.cumfreq.searchsorted(freqs),index=freqs,name=c)
 res = pd.concat(b, axis=1)
-
+res_cnt = pd.concat(cnts, axis=1)
 
 dat[ints].describe()
 import matplotlib.pyplot as plt

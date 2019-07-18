@@ -7,15 +7,15 @@
 
 import os
 import json
+import tarfile
 import pickle
 import sys
 import traceback
 import time
 import subprocess
+import shutil
 
 import pandas as pd
-
-from sklearn import tree
 
 # These are the paths to where SageMaker mounts interesting things in your container.
 
@@ -24,6 +24,7 @@ prefix = '/opt/ml/'
 input_path = prefix + 'input/data'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model')
+input_model_path = os.path.join(input_path, 'model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 # This algorithm has a single channel of input data called 'training'. Since we run in
@@ -60,11 +61,33 @@ def train():
         # Read in any hyperparameters that the user passed with the training job
         with open(param_path, 'r') as tc:
             pars_dc = json.load(tc)
-        print(pars_dc)
+        print('json hyperparams', pars_dc)
+        print('directory contents')
+        # for dirname, dirnames, filenames in os.walk(prefix, followlinks=True):
+        #     # print path to all subdirectories first.
+        #     for subdirname in dirnames:
+
+        #         print('dir', os.path.join(dirname, subdirname))
+        #         # print path to all filenames.
+
+        #         for filename in filenames:
+        #             print('file', os.path.join(dirname, filename))
+
+        input_model_tar = os.path.join(input_model_path, 'model.tar.gz')
+        input_model = os.path.join(input_model_path, 'model.bin')
+        #model_files = [file for file in os.listdir(input_model_path)]
+        #print('model files:', model_files)
         model = os.path.join(model_path, 'model.bin')
+        
         vw_param_list = convert_json_params(pars_dc)
+        
         vw_command = ['vw','--final_regressor', model] + vw_param_list
-        print (vw_command)
+        if os.path.exists(input_model_tar):
+            tar = tarfile.open(input_model_tar, "r:gz")
+            tar.extractall(path = input_model_path)
+            tar.close()
+            vw_command += ['--initial_regressor', input_model]
+        print ('vw command:', vw_command)
         # Note that hyperparameters are always passed in as
         # strings, so we need to do any necessary conversions.
 
@@ -73,7 +96,7 @@ def train():
         # Take the set of files and read them all into a single pandas dataframe
         input_files = [os.path.join(training_path, file) 
                        for file in os.listdir(training_path)]
-        print(input_files)
+        print('input files', input_files)
         if len(input_files) == 0:
             raise ValueError(('There are no files in {}.\n' +
                               'This usually indicates that the channel ({}) was incorrectly specified,\n' +
@@ -83,7 +106,7 @@ def train():
         p = subprocess.Popen(vw_command,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT,
-                             cwd=training_path,)
+                             cwd=training_path)
         with open(os.path.join(model_path, 'results_log.txt'), 'w') as out:
             for line in iter(p.stdout.readline, b''):
                 lin = line.decode('utf-8').rstrip()
@@ -96,6 +119,12 @@ def train():
         #print(stderr)
         duration = time.time() - start_time
         print('Training complete in {} seconds.'.format(duration))
+        data_file = pars_dc.get('data', pars_dc.get('d'))
+        if data_file and pars_dc.get('noop') and pars_dc.get('cache', pars_dc.get('c')):
+            cache_src = os.path.join(training_path, data_file + '.cache')
+            cache_dst = os.path.join(model_path,
+                                     os.path.basename(cache_src))
+            shutil.copyfile(cache_src, cache_dst)
     except Exception as e:
         # Write out an error file. This will be returned as the failureReason in the
         # DescribeTrainingJob result.
